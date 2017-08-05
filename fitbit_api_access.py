@@ -41,8 +41,7 @@ def getNewRefreshToken(url):
 		'client_id' : client_codes.get('client_id'),
 		'grant_type' : 'authorization_code'
 	}
-	try:
-		import pdb; pdb.set_trace()
+	try:		
 		encodedRequestBody = urllib.urlencode(requestBody)
 		request = urllib2.Request(oAuthUrl, encodedRequestBody)
 		request.add_header('Authorization', 'Basic ' + base64.b64encode(client_codes.get('client_id')  +  ":" + client_codes.get('client_secret')))
@@ -56,12 +55,32 @@ def getNewRefreshToken(url):
 	except urllib2.URLError as e:			
 		#this means the code is wrong, manual override
 		print '----manual override----'		
+		getNewCode()
+
+def getNewCode():
+	import pdb; pdb.set_trace()
+	url = 'https://www.fitbit.com/oauth2/authorize'
+	requestBody = {		
+		'redirect_uri' : client_codes.get('redirect_uri'),
+		'client_id' : client_codes.get('client_id'),
+		'response_type' : 'code',
+		'scope': tokens.get('scope')
+	}
+	try:		
+		encodedRequestBody = urllib.urlencode(requestBody)
+		request = urllib2.Request(url, encodedRequestBody)
+		request.add_header('Content-Type', 'application/x-www-form-urlencoded')
+		response = urllib2.urlopen(request).read()
+		print response
+	except urllib2.URLError as e:
+		print '---cant get code ---'
+		print e.code
 
 
 def update_tokens(json_output):
 	tokens['access_token'] = json_output.get('access_token')
 	tokens['refresh_token'] = json_output.get('refresh_token')
-	fitbit_keys.tokens = tokens 
+	fitbit_keys.tokens.update(tokens)
 
 
 def doApiCall(url):
@@ -73,13 +92,14 @@ def doApiCall(url):
 if __name__ == '__main__':
 
 	# checkIfTokenIsValid()
+	import pdb; pdb.set_trace()
 	url = "https://api.fitbit.com/1/user/-/profile.json"
 	try:        
 		doApiCall(url)      
 	except urllib2.URLError as e:
 		print '-----Api call exception----\n'
 		HTTPErrorMessage = e.read()
-		if e.code -- 401 and 'Access token expired' in HTTPErrorMessage:
+		if e.code == 401 and 'Access token expired' in HTTPErrorMessage:
 			checkIfTokenIsValid(url)
 
 
